@@ -262,7 +262,7 @@ int main(int argc, char **argv)
 	}*/
 	//emboss:
 	//same what happens with modulation; colormap is changed
-	parser_image = EmbossImage(base, 1.1, 0, exception);
+	parser_image = EmbossImage(base, 1.1, 1, exception);
 	DestroyImage(base);
 	//gaussian blur:
 	//SetImageArtifact(parser_image, "attenuate", "0.5");//does nothing suprisingly
