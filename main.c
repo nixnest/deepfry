@@ -10,7 +10,7 @@
 #include <magick/opencl.h>//opencl support
 #include "b.h"//B image data, gives 'int b_image_size' and 'char b_image[]'
 
-size_t percentage = 5;
+size_t percentage = 5;//how many percent of detected characters should be replaced with :b:
 
 char* image_data;//our precious image ☭
 size_t data_size;
@@ -33,7 +33,7 @@ static size_t downloaded_chunk(void* contents, size_t size, size_t nmemb)//here 
 	return real_size;
 }
 
-uint64_t hasher(char* data, size_t size)
+uint64_t hasher(char* data, size_t size)//small amount of collisions but still fast
 {
 	uint64_t hash = 14695981039346656037U;//magic offset constant
 	for(size_t i = 0; i < size; i++)
@@ -167,7 +167,7 @@ int main(int argc, char **argv)
 	TessBaseAPIInit3(tess_api, 0, "eng");
 	TessBaseAPISetImage2(tess_api, image);
 	struct Boxa* dimensions = TessBaseAPIGetComponentImages(tess_api, RIL_SYMBOL, 1, 0, 0);
-	struct Box* dimension;
+	struct Box* dimension;//now we have all coordinates for :B: replacement
 	//Boxa is a struct with box arrays
 	//'n' is an element count (32 bit int)
 	//'box' is an array of box pointers
@@ -202,10 +202,10 @@ int main(int argc, char **argv)
 	RectangleInfo rectangle;
 	rectangle.x = 0;
 	rectangle.y = 0;
-	OffsetInfo point;
-	//2% (each 100 elements should get 2), dividing by 50
+	OffsetInfo point;//magick is fully initialised
+	//we use percentage variable to determine how many :B: should be placed
 	uint32_t percent_n = (dimensions->n)*percentage/100;
-	if((!percent_n) && dimensions->n > 1)
+	if((!percent_n) && dimensions->n > 1)//we can place at least 1 :B: but 0 were chosen
 	{//image without :B: has no meaning or value, no matter how small
 		if(rand_gen()&1)//however if random number is even then God dislikes this image
 		{
@@ -231,7 +231,7 @@ int main(int argc, char **argv)
 		rectangle.width = dimension->w;
 		rectangle.height = dimension->h;
 		parser_image = AdaptiveResizeImage(B, rectangle.width, rectangle.height, exception);
-		CopyImagePixels(base, parser_image, &rectangle, &point, exception);//parse on location
+		CopyImagePixels(base, parser_image, &rectangle, &point, exception);//here we have copied :B: onto image
 		DestroyImage(parser_image);
 	}
 	for(uint32_t i = 0; i < percent_n; i++)//if i won't get it back to normal, api might go nuts
@@ -246,7 +246,7 @@ int main(int argc, char **argv)
 	DestroyImage(base);
 	base = LiquidRescaleImage(parser_image, image_width, image_height, 1, 1, exception);
 	DestroyImage(parser_image);
-	//modulate:
+	//modulate: (hue and saturation percentage)
 	ModulateImage(base, "50,200");// ← super bloated function that should be replaced
 	//here is unfinished direct implementation that should be faster
 	//to remember: update colormaps, then pixels (maybe only pixels if colormap won't be changed later)
@@ -265,7 +265,7 @@ int main(int argc, char **argv)
 	parser_image = EmbossImage(base, 1.1, 0, exception);
 	DestroyImage(base);
 	//gaussian blur:
-	SetImageArtifact(parser_image, "attenuate", "0.5");
+	//SetImageArtifact(parser_image, "attenuate", "0.5");//does nothing suprisingly
 	base = AddNoiseImage(parser_image, GaussianNoise, exception);
 	DestroyImage(parser_image);
 	//finally export
